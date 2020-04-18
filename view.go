@@ -445,6 +445,12 @@ func (v *View) ViewBufferLines() []string {
 	return lines
 }
 
+// ViewBufferLinesLength returns the length of the lines in the view's internal
+// buffer that is shown to the user.
+func (v *View) ViewBufferLinesLength() int {
+	return len(v.viewLines)
+}
+
 // ViewBuffer returns a string with the contents of the view's buffer that is
 // shown to the user.
 func (v *View) ViewBuffer() string {
