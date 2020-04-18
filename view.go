@@ -87,11 +87,12 @@ type lineType []cell
 
 // String returns a string from a given cell slice.
 func (l lineType) String() string {
-	str := ""
+	b := strings.Builder{}
+	b.Grow(len(l))
 	for _, c := range l {
-		str += string(c.chr)
+		b.WriteRune(c.chr)
 	}
-	return str
+	return b.String()
 }
 
 // newView returns a new View object.
@@ -423,11 +424,13 @@ func (v *View) BufferLines() []string {
 // Buffer returns a string with the contents of the view's internal
 // buffer.
 func (v *View) Buffer() string {
-	str := ""
+	b := strings.Builder{}
+	b.Grow(len(v.lines) * 80)
 	for _, l := range v.lines {
-		str += lineType(l).String() + "\n"
+		b.WriteString(lineType(l).String())
+		b.WriteString("\n")
 	}
-	return strings.Replace(str, "\x00", " ", -1)
+	return strings.Replace(b.String(), "\x00", " ", -1)
 }
 
 // ViewBufferLines returns the lines in the view's internal
@@ -445,11 +448,13 @@ func (v *View) ViewBufferLines() []string {
 // ViewBuffer returns a string with the contents of the view's buffer that is
 // shown to the user.
 func (v *View) ViewBuffer() string {
-	str := ""
+	b := strings.Builder{}
+	b.Grow(len(v.viewLines) * 80)
 	for _, l := range v.viewLines {
-		str += lineType(l.line).String() + "\n"
+		b.WriteString(lineType(l.line).String())
+		b.WriteString("\n")
 	}
-	return strings.Replace(str, "\x00", " ", -1)
+	return strings.Replace(b.String(), "\x00", " ", -1)
 }
 
 // Line returns a string with the line of the view's internal buffer
