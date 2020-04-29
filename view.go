@@ -7,7 +7,9 @@ package gocui
 import (
 	"bytes"
 	"errors"
+	"index/suffixarray"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/nsf/termbox-go"
@@ -71,6 +73,9 @@ type View struct {
 	// If Mask is true, the View will display the mask instead of the real
 	// content
 	Mask rune
+
+	Search                       *regexp.Regexp
+	SearchBgColor, SearchFgColor Attribute
 }
 
 type viewLine struct {
@@ -98,15 +103,17 @@ func (l lineType) String() string {
 // newView returns a new View object.
 func newView(name string, x0, y0, x1, y1 int, mode OutputMode) *View {
 	v := &View{
-		name:    name,
-		x0:      x0,
-		y0:      y0,
-		x1:      x1,
-		y1:      y1,
-		Frame:   true,
-		Editor:  DefaultEditor,
-		tainted: true,
-		ei:      newEscapeInterpreter(mode),
+		name:          name,
+		x0:            x0,
+		y0:            y0,
+		x1:            x1,
+		y1:            y1,
+		Frame:         true,
+		Editor:        DefaultEditor,
+		tainted:       true,
+		ei:            newEscapeInterpreter(mode),
+		SearchBgColor: Attribute(termbox.ColorMagenta),
+		SearchFgColor: Attribute(termbox.ColorRed),
 	}
 	return v
 }
@@ -351,6 +358,14 @@ func (v *View) draw() error {
 				bgColor = v.BgColor
 			}
 
+			offsets := SearchFunc(v.Search, lineType(vline.line).String())
+			for _, offset := range offsets {
+				if offset[1] > x && offset[0] <= j {
+					bgColor = Attribute(termbox.ColorYellow)
+					fgColor = Attribute(termbox.ColorRed)
+				}
+			}
+
 			if err := v.setRune(x, y, c.chr, fgColor, bgColor); err != nil {
 				return err
 			}
@@ -359,6 +374,16 @@ func (v *View) draw() error {
 		y++
 	}
 	return nil
+}
+
+func SearchFunc(r *regexp.Regexp, line string) (offsets [][]int) {
+	if r == nil {
+		return
+	}
+
+	index := suffixarray.New([]byte(line))
+	offsets = index.FindAllIndex(r, -1)
+	return
 }
 
 // realPosition returns the position in the internal buffer corresponding to the
